@@ -3,7 +3,7 @@ import { ReactMic } from 'react-mic';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMicrophone, faStopCircle, faSun, faMoon } from '@fortawesome/free-solid-svg-icons';
 import './App.css';
-import uploadAudio from '../../api/uploadAudio';
+// import uploadAudio from '../../api/uploadAudio';
 
 function App() {
   const [isRecording, setIsRecording] = useState(false);
@@ -13,6 +13,8 @@ function App() {
     const fileName = 'recording.wav';
     const file = recordedBlob.blob;
 
+    // const url = URL.createObjectURL(file);
+    // console.log(url);
     // const link = document.createElement('a');
     // link.href = url;
     // link.download = fileName;
