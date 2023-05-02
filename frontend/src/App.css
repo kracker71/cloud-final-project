@@ -1,0 +1,69 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.react-mic {
+  width: 50%;
+  margin-bottom: 2rem;
+}
+
+.button-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.record-button,
+.stop-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 5px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.record-button.recording {
+  background-color: #f44336;
+  color: #fff;
+}
+
+.record-button:not(.recording) {
+  background-color: #4caf50;
+  color: #fff;
+}
+
+.stop-button {
+  background-color: #f44336;
+  color: #fff;
+}
+
+.toggle-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+}
+
+.toggle-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  color: #333;
+  font-size: 1.5rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.toggle-button:hover {
+  transform: scale(1.2);
+}
