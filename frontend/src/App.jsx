@@ -13,9 +13,11 @@ function App() {
 
   const onStop = async (recordedBlob) => {
 
-    setIsLoading(true);
+    setIsLoading(true); // Set loading to true while processing
     setErrorMessage(''); // Clear any existing error messages
-
+    const fileName = uuid();
+    //
+    //// Download the audio file
     // const url = URL.createObjectURL(recordedBlob.blob);
     // console.log(url);
     // const link = document.createElement('a');
@@ -24,7 +26,8 @@ function App() {
     // link.click();
 
     try{
-      const fileName = uuid();
+      //
+      //// Convert the audio file to WAV
       const convertToWav = (blob) => {
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
@@ -40,11 +43,12 @@ function App() {
           reader.readAsArrayBuffer(blob);
         });
       };
-
+      //
+      //// Upload the audio file to S3
       const uploadAudio = async (wavBlob) => {
 
-        console.log(fileName)
-        console.log(wavBlob)
+        // console.log(fileName)
+        // console.log(wavBlob)
       
         // Create a new FormData object
         const formData = new FormData();
@@ -52,8 +56,6 @@ function App() {
         // Append the audio file to the form data
         formData.append('audio_file', wavBlob);
         formData.append('file_name', fileName);
-        
-        // console.log(formData)
 
         // Upload the audio file
         const url = await fetch('https://uh2gh97h3h.execute-api.us-east-1.amazonaws.com/default/useless-bot', {
@@ -62,6 +64,8 @@ function App() {
         })
         return url;
       }
+      //
+      //// Convert the audio file to text using AWS Transcribe
       const speech2text = async (url) => {
         const data = {
           "name": fileName,
@@ -73,7 +77,8 @@ function App() {
         })
         return text
       }
-
+      //
+      //// Convert the text to audio using AWS Polly
       const text2speech = async (text) => {
         const data = {
           "text" : text
@@ -84,7 +89,8 @@ function App() {
         })
         return audio
       }
-
+      //
+      //// Read the stream from the response
       function readStream(reader, arrayBuffer = NaN) {
         return new Promise((resolve, reject) => {
           reader.read().then(({ done, value }) => {
@@ -100,7 +106,8 @@ function App() {
             // Process the chunk of data
             console.log("Received data:", value);
             // Continue reading the stream
-            readStream(reader, value).then(resolve).catch(reject);
+            arrayBuffer = arrayBuffer ? new Uint8Array([...arrayBuffer, ...value]) : value;
+            readStream(reader, arrayBuffer).then(resolve).catch(reject);
           }).catch(error => {
             // Handle any errors that occur during reading
             console.error("Error reading stream:", error);
@@ -108,47 +115,104 @@ function App() {
           });
         });
       }
-
-      const wavBlob = await convertToWav(recordedBlob.blob);
-      const resUrl = await uploadAudio(wavBlob);
-      const reader = resUrl.body.getReader();
-      const url = await readStream(reader);
-      console.log(url);
-      
-      try{
-        const text = await speech2text(url);
-        console.log(text);
-      }
-      catch (err) {
-        console.log(err);
-        setErrorMessage('An error occurred. Please try again.'); // Set the error message
-        setIsLoading(false);
-        return;
-      }
-
-      // const audio = await text2speech(text.body);
-      // console.log(audio);
-    
-      // // Play the audio file
-      // const tmp_url = URL.createObjectURL(audio);
-      // const result = new Audio(tmp_url);
-      // // audio.volume = 1;
-      // result.play();
-
+      // Sleep system
       function sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
       }
-
+      // Random int
       function randomIntFromInterval(min, max) { // min and max included 
         return Math.floor(Math.random() * (max - min + 1) + min)
       }
-      
-      const rndInt = randomIntFromInterval(1, 3)
 
-      for (let i = 0; i < 2; i++) {
+      // Start processing the audio file
+      const wavBlob = await convertToWav(recordedBlob.blob);
+
+      // Upload the audio file to S3
+      const resUrl = await uploadAudio(wavBlob);
+      const reader = resUrl.body.getReader(); // Get the reader from the response
+      const url = await readStream(reader);
+
+      // Convert the audio file to text using AWS Transcribe
+      const resText = await speech2text(url);
+      var text = ''
+      //Handle error for long processing time
+      if (resText.status == 503){
+
+        for (let i = 0; i < 2; i++) {
+          console.log(`Waiting ${i} seconds...`);
+          await sleep(i * 1000);
+        }
+        // Get the text from s3 bucket instead
+        text = await fetch('https://nls5awfygi.execute-api.us-east-1.amazonaws.com/default/finalget',{
+          method: 'POST',
+          body : JSON.stringify({filename : fileName})
+        }) // Get the text from the response
+        if (text.status != 200) {
+          console.log("Error")
+          // Handle error for long uploading time
+          for (let i = 0; i < 5; i++) {
+            console.log(`Waiting ${i} seconds...`);
+            await sleep(i * 1000);
+          }
+          text = await fetch('https://nls5awfygi.execute-api.us-east-1.amazonaws.com/default/finalget',{
+            method: 'POST',
+            body : JSON.stringify({filename : fileName})
+          })
+        }
+      }
+      else if (resText.status == 200){
+        const reader = resText.body.getReader(); // Get the reader from the response
+        text = await readStream(reader);
+      }
+      else {
+        console.log("Error")
+        setIsLoading(false);
+        setErrorMessage('An error occurred. Please try again.'); // Set the error message
+        return;
+      }
+
+      const reader2 = text.body.getReader(); // Get the reader from the response
+      text = await readStream(reader2); // Get the text string from the reader
+
+      console.log(text);
+
+      // Mapping text to text using mook.json
+
+      //
+
+      // Convert the text to audio using AWS Polly
+      const resAudio = await text2speech(text); 
+      console.log(resAudio)
+      const reader3 = resAudio.body.getReader(); // Get the reader from the response
+      const audio = await readStream(reader3);// Get the text string from the reader
+
+      // Decode the base64 audio
+      const decodedData = atob(audio);
+
+      // Convert the decoded data into an ArrayBuffer
+      const buffer = new ArrayBuffer(decodedData.length);
+      const view = new Uint8Array(buffer);
+      for (let i = 0; i < decodedData.length; i++) {
+        view[i] = decodedData.charCodeAt(i);
+      }
+
+      // Create a Blob from the ArrayBuffer with the appropriate MIME type
+      const blob = new Blob([buffer], { type: 'audio/mpeg' });
+      
+      // Play the audio
+      const tmp_url = URL.createObjectURL(blob);
+      const result = new Audio(tmp_url);
+      result.volume = 1;
+      result.play();
+      
+      const rndInt = randomIntFromInterval(1, 3) // random int from 1 to 3
+
+      // Play the effect after 2 seconds
+      for (let i = 0; i < 3; i++) {
         console.log(`Waiting ${i} seconds...`);
         await sleep(i * 1000);
-    }
+      }
+      // Play the effect randomly
       if (rndInt == 1) {
         const audio2 = new Audio("effect.mp3");
         audio2.volume = 0.5;
@@ -169,6 +233,8 @@ function App() {
     catch (err) {
       console.log(err);
       setIsLoading(false);
+      setErrorMessage('An error occurred. Please try again.'); // Set the error message
+      return;
     }
   };
   
