@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMicrophone, faStopCircle, faSun, faMoon, faListAlt } from '@fortawesome/free-solid-svg-icons';
 import uuid from 'react-uuid';
 import './App.css';
+import { mapJson } from './tools/mapJson';
 
 function App() {
   const [isRecording, setIsRecording] = useState(false);
@@ -177,6 +178,16 @@ function App() {
       console.log(text);
 
       // Mapping text to text using mook.json
+      const res = await mapJson()
+      if(res.status == 200){
+        const reader = res.body.getReader(); // Get the reader from the response
+        const json = await readStream(reader);
+        console.log(json)
+        const obj = JSON.parse(json)
+        console.log(obj)
+        text = obj[text] || "Chun mai kao jaii. Lenn Mook Euen Daii maii";
+        console.log(text)
+      }
 
       //
 
@@ -240,7 +251,7 @@ function App() {
   
   return (
     <div className={`audio-recorder flex flex-col justify-center items-center h-screen`}>
-      <h1 className='p-20'>Audio Recorder</h1>
+      <h1 className='p-20'>Mook Recorder</h1>
       <ReactMic
         record={isRecording}
         className="react-mic"
