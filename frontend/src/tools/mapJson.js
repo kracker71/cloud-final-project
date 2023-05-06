@@ -1,21 +1,25 @@
-export function mapJson(text) {
-    var res = ""
-    fetch('https://cloud-abfinal-proj.s3.amazonaws.com/mook.json',{
-        method: 'GET',
-        headers: {
-            'Accept': 'application/json',
+export async function mapJson() {
+    // var res = ""
+    // fetch('https://mmtqpi1os7.execute-api.us-east-1.amazonaws.com/default/getMook',{
+    //     method: 'post',
+    // }).then(response => response.json())
+    // .then(data => {
+    //     console.log(data)
+    //     res = data[text]
+    //     console.log(res)
+    // })
+    // .catch(error => {
+    //     console.log(error)
+    //     return error
+    // });
 
-        },
-
-    }).then(response => response.json())
-    .then(data => {
-        res = data[text]
-        console.log(res)
+    const res = await fetch('https://mmtqpi1os7.execute-api.us-east-1.amazonaws.com/default/getMook',{
+        method: 'post',
     })
-    .catch(error => {
-        console.log(error)
-        return error
-    });
+    console.log(res)
+    return res
 }
+
+mapJson()
 
 
