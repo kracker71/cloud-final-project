@@ -1,0 +1,16 @@
+
+import requests
+import base64
+
+data = {"text": "Hello World!"}
+response = requests.post("https://7g9v1erid8.execute-api.us-east-1.amazonaws.com/default/textToSpeech", json=data)
+decoded_audio = base64.b64decode(response.content)
+with open("speech2.mp3", "wb") as f:
+    f.write(decoded_audio)
+
+input: {
+    "text" : str
+}
+
+output : request response
+
